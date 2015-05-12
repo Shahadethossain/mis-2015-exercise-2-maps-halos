@@ -1,22 +1,83 @@
 package com.example.mmbuw.hellomaps;
 
-import android.support.v4.app.FragmentActivity;
+import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity {
+import java.util.HashSet;
+import java.util.Set;
+
+public class MapsActivity extends Activity implements GoogleMap.OnMapLongClickListener {
+
+
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+
+    EditText message;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        message = (EditText) findViewById(R.id.message);
+
         setUpMapIfNeeded();
+
+        mMap.setMyLocationEnabled(true);
+
+        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener(){
+
+            @Override
+            public void onMapLongClick(LatLng latLng){
+
+                mMap.addMarker(new MarkerOptions().position(latLng).title(message.getText().toString()));
+
+                CircleOptions circle = new CircleOptions();
+                circle.center(latLng).fillColor(0x40ff0000).radius(1000000).strokeColor(Color.RED).strokeWidth(3);
+
+                mMap.addCircle(circle);
+
+                storeData(message.getText().toString());
+            }
+        });
+    }
+
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+
+    }
+
+    public void storeData(String str){
+
+        Set storeMessage = new HashSet();
+        storeMessage.add(str);
+        SharedPreferences prefs = getSharedPreferences("Prefs",Activity.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putStringSet("Content",storeMessage);
+
+        Boolean flag = editor.commit();
+
+        if(flag == true){
+
+            Context context = getApplicationContext();
+            CharSequence text = "Saved Successfully";
+            int duration = Toast.LENGTH_LONG;
+
+            Toast toast = Toast.makeText(context,text,duration);
+            toast.show();
+        }
     }
 
     @Override
@@ -44,7 +105,7 @@ public class MapsActivity extends FragmentActivity {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
             // Try to obtain the map from the SupportMapFragment.
-            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
+            mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
                     .getMap();
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
